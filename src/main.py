@@ -46,7 +46,7 @@ db = pymysql.connect(host=os.environ.get('DATABASE_HOST'),user=os.environ.get('D
 
 class BlockchainName(str, Enum):
   sui = "sui"
-  avalance = "avalance"
+  avalanche = "avalanche"
   bnb = "bnb"
   mina = "mina"
 
