@@ -18,6 +18,16 @@ load_dotenv(dotenv_path)
 import pymysql
 db = pymysql.connect(host=os.environ.get('DATABASE_HOST'),user=os.environ.get('DATABASE_USER'),password=os.environ.get('DATABASE_PASSWORD'),database=os.environ.get('DATABASE_DB'),cursorclass=pymysql.cursors.DictCursor)
 
+'''
+CREATE TABLE IF NOT EXISTS `mina_transactions` (
+  `id` int(11) NOT NULL auto_increment,
+  `block` int(11) NOT NULL default '0',
+  `state` varchar(250)  NOT NULL default '',
+  `fee`  int(11) NOT NULL,
+   PRIMARY KEY  (`id`)
+);
+'''
+
 # connect to websocket
 # receive latest blocks
 # store information in database
