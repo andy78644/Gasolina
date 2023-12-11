@@ -59,6 +59,7 @@ class SpeedName(str, Enum):
 async def gas(
   blockchain: BlockchainName
   ):
+  # todo query db and respond last fee estimation
   return blockchain
 
 @app.get("/api/v1/gas/{blockchain}/{speed}", tags=["gas"])
@@ -66,5 +67,6 @@ async def gas_by_speed(
   blockchain: BlockchainName,
   speed: SpeedName
   ):
+  # todo query db and respond last fee estimation
   return blockchain
 

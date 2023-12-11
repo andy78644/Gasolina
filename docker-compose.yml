@@ -54,3 +54,30 @@ services:
       - mariadb
       - rabbitmq
     restart: on-failure:5
+  sui:
+    build:
+      context: src
+      dockerfile: Dockerfile
+    environment:
+      NODE_ENV: INFO
+    command: /app/src/entrypoint.sh sui
+    volumes:
+      - ./src:/app/src
+    depends_on:
+      - mariadb
+      - rabbitmq
+    restart: on-failure:5
+  mina:
+    build:
+      context: src
+      dockerfile: Dockerfile
+    environment:
+      NODE_ENV: INFO
+    command: /app/src/entrypoint.sh mina
+    volumes:
+      - ./src:/app/src
+    depends_on:
+      - mariadb
+      - rabbitmq
+    restart: on-failure:5
+

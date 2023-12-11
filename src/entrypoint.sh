@@ -14,6 +14,13 @@ elif [ $APP == 'scheduler' ]; then
   export CELERY_QUEUE=scheduler
   celery -A $APP worker -B --loglevel=info -Q $CELERY_QUEUE -P prefork --concurrency=1 -s celerybeat-$APP
 
+elif [ $APP == 'sui' ]; then
+  cd /app/src/
+  python3 sui.py
+
+elif [ $APP == 'mina' ]; then
+  cd /app/src/
+  python3 mina.py
 else
   print "something is wrong... oh lala"
 fi
