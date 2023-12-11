@@ -52,7 +52,7 @@ class BlockchainName(str, Enum):
 
 class SpeedName(str, Enum):
   slow = "slow"
-  medium = "medium"
+  average = "average"
   fast = "fast"
 
 @app.get("/api/v1/gas/{blockchain}", tags=["gas"])
