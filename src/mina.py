@@ -12,6 +12,18 @@ dotenv_path = join(dirname(__file__), '.env')
 load_dotenv(dotenv_path)
 
 #
+# CELERY
+#
+
+from celery import Celery
+from celery.utils.log import get_task_logger
+from celery.schedules import crontab
+
+celery_app = Celery('tasks', backend=os.environ.get('REDIS_URL'), broker=os.environ.get('CELERY_URL'), broker_connection_retry_on_startup=True)
+logger = get_task_logger(__name__)
+celery_app.conf.task_default_queue=os.environ.get('CELERY_QUEUE')
+
+#
 # DATABASE
 #
 
@@ -20,19 +32,21 @@ db = pymysql.connect(host=os.environ.get('DATABASE_HOST'),user=os.environ.get('D
 
 '''
 CREATE TABLE IF NOT EXISTS `mina_transactions` (
-  `id` int(11) NOT NULL auto_increment,
-  `block` int(11) NOT NULL default '0',
-  `state` varchar(250)  NOT NULL default '',
-  `fee`  int(11) NOT NULL,
-   PRIMARY KEY  (`id`)
+	`id` int(11) NOT NULL auto_increment,
+	`block` int(11) NOT NULL default '0',
+	`state` varchar(250)  NOT NULL default '',
+	`fee`  int(11) NOT NULL,
+	`type` varchar(10)  NOT NULL default '',
+	 PRIMARY KEY  (`id`)
 );
 '''
 
-# connect to websocket
-# receive latest blocks
-# store information in database
 
-def main():
+@celery_app.task(name='processing')
+def processing():
+	# DB
+	db = pymysql.connect(host=os.environ.get('DATABASE_HOST'),user=os.environ.get('DATABASE_USER'),password=os.environ.get('DATABASE_PASSWORD'),database=os.environ.get('DATABASE_DB'),cursorclass=pymysql.cursors.DictCursor)
+
 	url = "https://api.minaexplorer.com/blocks"
 	headers = {'Accept': 'application/json'}
 	querystring = {"limit":1}
@@ -42,8 +56,10 @@ def main():
 	data = response.json()
 	blockHeight = data['blocks'][0]['blockHeight']
 	snarkJobs = data['blocks'][0]['snarkJobs']
+	userCommands = data['blocks'][0]['transactions']['userCommands']
+	feeTransfer = data['blocks'][0]['transactions']['feeTransfer']
 
-	print('block %s' % (blockHeight))
+	print('latest block %s' % (blockHeight))
 
 	# check if block is already processed
 	cursor = db.cursor()
@@ -54,21 +70,58 @@ def main():
 		print('block already processed')
 
 	else:
-
-		# add transactions to database
+		# add snark transactions to database
 		for snark in snarkJobs:
-			print('found fee: %s state %s' % (snark['fee'],snark['blockStateHash']))
+			print('found snark fee: %s state %s' % (snark['fee'],snark['blockStateHash']))
 
 			cursor = db.cursor()
 			cursor.execute("INSERT INTO `mina_transactions` ( \
 				block, \
 				state, \
-				fee \
-				) VALUES ('%s','%s','%s') \
-				" % (int(blockHeight),snark['blockStateHash'],int(snark['fee'])))
+				fee, \
+				type \
+				) VALUES ('%s','%s','%s','%s') \
+				" % (int(blockHeight),snark['blockStateHash'],int(snark['fee']),'snark'))
 			db.commit()
 			cursor.close()
 
-if __name__ == "__main__":
-	main()
+		# add user transactions to database
+		for user in userCommands:
+			print('found user fee: %s state %s' % (user['fee'],user['blockStateHash']))
 
+			cursor = db.cursor()
+			cursor.execute("INSERT INTO `mina_transactions` ( \
+				block, \
+				state, \
+				fee, \
+				type \
+				) VALUES ('%s','%s','%s','%s') \
+				" % (int(blockHeight),user['blockStateHash'],int(user['fee']),'user'))
+			db.commit()
+			cursor.close()
+
+		# add fee transactions to database
+		for fee in feeTransfer:
+			print('found user fee: %s state %s' % (fee['fee'],fee['blockStateHash']))
+
+			cursor = db.cursor()
+			cursor.execute("INSERT INTO `mina_transactions` ( \
+				block, \
+				state, \
+				fee, \
+				type \
+				) VALUES ('%s','%s','%s','%s') \
+				" % (int(blockHeight),fee['blockStateHash'],int(fee['fee']),'user'))
+			db.commit()
+			cursor.close()
+
+	db.close()
+	return('Finished')
+
+#
+# SCHEDULER
+#
+
+@celery_app.on_after_configure.connect
+def setup_periodic_tasks(sender, **kwargs):
+	sender.add_periodic_task(10.0, processing.s(), name='refresh data - every 10 seconds')
