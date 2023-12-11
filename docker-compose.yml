@@ -1,0 +1,56 @@
+version: "3.3"
+
+services:
+  mariadb:
+    image: mariadb:11.2.2
+    ports:
+      - 3306:3306
+    environment:
+      - MARIADB_USER=app
+      - MARIADB_DATABASE=app
+      - MARIADB_PASSWORD=app
+      - MARIADB_ROOT_PASSWORD=app
+    volumes:
+      - ./static/mariadb/create-databases.sql:/docker-entrypoint-initdb.d/create-databases.sql
+      - ./static/mariadb/data:/var/lib/mysql
+    restart: on-failure:5
+  rabbitmq:
+    image: rabbitmq:3.12-management
+    ports:
+      - 5672:5672
+      - 15672:15672
+    restart: on-failure:5
+  redis:
+    image: redis:7
+    ports:
+      - 6379:6379
+    environment:
+      ALLOW_EMPTY_PASSWORD: 'yes'
+  api:
+    build:
+      context: src
+      dockerfile: Dockerfile
+    ports:
+      - 8000:8000
+    environment:
+      NODE_ENV: INFO
+    command: /app/src/entrypoint.sh api
+    volumes:
+      - ./src:/app/src
+    depends_on:
+      - mariadb
+      - rabbitmq
+    restart: on-failure:5
+  scheduler:
+    build:
+      context: src
+      dockerfile: Dockerfile
+    environment:
+      NODE_ENV: INFO
+    command: /app/src/entrypoint.sh scheduler
+    volumes:
+      - ./src:/app/src
+    depends_on:
+      - mariadb
+      - rabbitmq
+    restart: on-failure:5

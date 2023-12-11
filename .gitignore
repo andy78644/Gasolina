@@ -1,0 +1,8 @@
+node_modules
+.wrangler
+__pycache__
+*db
+.env
+static/mariadb/data
+celerybeat*
+docker-compose.override.yml
