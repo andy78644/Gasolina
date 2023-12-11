@@ -80,4 +80,17 @@ services:
       - mariadb
       - rabbitmq
     restart: on-failure:5
+  bnb:
+    build:
+      context: src
+      dockerfile: Dockerfile
+    environment:
+      NODE_ENV: INFO
+    command: /app/src/entrypoint.sh bnb
+    volumes:
+      - ./src:/app/src
+    depends_on:
+      - mariadb
+      - rabbitmq
+    restart: on-failure:5
 

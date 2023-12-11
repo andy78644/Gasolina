@@ -24,6 +24,12 @@ elif [ $APP == 'mina' ]; then
 	export CELERY_QUEUE=processing
 	celery -A $APP worker -B --loglevel=info -Q $CELERY_QUEUE -P prefork --concurrency=1 -s celerybeat-$APP
 
+elif [ $APP == 'bnb' ]; then
+	cd /app/src/
+	rm celerybeat-schedule 2>/dev/null
+	export CELERY_QUEUE=processing
+	celery -A $APP worker -B --loglevel=info -Q $CELERY_QUEUE -P prefork --concurrency=1 -s celerybeat-$APP
+
 else
 	print "something is wrong... oh lala"
 fi

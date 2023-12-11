@@ -1,4 +1,4 @@
-FROM --platform=linux/amd64 python:3.12.0-slim-bookworm
+FROM python:3.12.0-slim-bookworm
 
 WORKDIR /app
 

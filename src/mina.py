@@ -1,6 +1,7 @@
 import os
 import json
 import requests
+from datetime import datetime
 
 #
 # ENV
@@ -28,7 +29,6 @@ celery_app.conf.task_default_queue=os.environ.get('CELERY_QUEUE')
 #
 
 import pymysql
-db = pymysql.connect(host=os.environ.get('DATABASE_HOST'),user=os.environ.get('DATABASE_USER'),password=os.environ.get('DATABASE_PASSWORD'),database=os.environ.get('DATABASE_DB'),cursorclass=pymysql.cursors.DictCursor)
 
 '''
 CREATE TABLE IF NOT EXISTS `mina_transactions` (
@@ -71,39 +71,34 @@ def processing():
 		print('block already processed')
 
 	else:
+		time_now = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+
 		# add snark transactions to database
 		for snark in snarkJobs:
 			print('found snark fee: %s state %s' % (snark['fee'],snark['blockStateHash']))
-
-			time_now = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
 
 			cursor = db.cursor()
 			cursor.execute("INSERT INTO `mina_transactions` ( \
 				block, \
 				state, \
 				fee, \
-				type, \
-				created_at, \
-				updated_at, \
-				) VALUES ('%s','%s','%s','%s','%s','%s') \
-				" % (int(blockHeight),snark['blockStateHash'],int(snark['fee']),'snark'),time_now,time_now)
+				type \
+				) VALUES ('%s','%s','%s','%s') \
+				" % (int(blockHeight),snark['blockStateHash'],int(snark['fee']),'snark'))
 			db.commit()
 			cursor.close()
 
 		# add user transactions to database
 		for user in userCommands:
-			print('found user fee: %s state %s' % (user['fee'],user['blockStateHash']))
 
 			cursor = db.cursor()
 			cursor.execute("INSERT INTO `mina_transactions` ( \
 				block, \
 				state, \
 				fee, \
-				type, \
-				created_at, \
-				updated_at, \
-				) VALUES ('%s','%s','%s','%s','%s','%s') \
-				" % (int(blockHeight),user['blockStateHash'],int(user['fee']),'user'),time_now,time_now)
+				type \
+				) VALUES ('%s','%s','%s','%s') \
+				" % (int(blockHeight),str(user['blockStateHash']),int(user['fee']),'user'))
 			db.commit()
 			cursor.close()
 
@@ -116,11 +111,9 @@ def processing():
 				block, \
 				state, \
 				fee, \
-				type, \
-				created_at, \
-				updated_at, \
-				) VALUES ('%s','%s','%s','%s','%s','%s') \
-				" % (int(blockHeight),fee['blockStateHash'],int(fee['fee']),'user'),time_now,time_now)
+				type \
+				) VALUES ('%s','%s','%s','%s') \
+				" % (int(blockHeight),fee['blockStateHash'],int(fee['fee']),'fee'))
 			db.commit()
 			cursor.close()
 
