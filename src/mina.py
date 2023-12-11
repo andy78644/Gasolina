@@ -37,10 +37,11 @@ CREATE TABLE IF NOT EXISTS `mina_transactions` (
 	`state` varchar(250)  NOT NULL default '',
 	`fee`  int(11) NOT NULL,
 	`type` varchar(10)  NOT NULL default '',
+	`created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ,
+	`updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 	 PRIMARY KEY  (`id`)
 );
 '''
-
 
 @celery_app.task(name='processing')
 def processing():
@@ -74,14 +75,18 @@ def processing():
 		for snark in snarkJobs:
 			print('found snark fee: %s state %s' % (snark['fee'],snark['blockStateHash']))
 
+			time_now = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+
 			cursor = db.cursor()
 			cursor.execute("INSERT INTO `mina_transactions` ( \
 				block, \
 				state, \
 				fee, \
-				type \
-				) VALUES ('%s','%s','%s','%s') \
-				" % (int(blockHeight),snark['blockStateHash'],int(snark['fee']),'snark'))
+				type, \
+				created_at, \
+				updated_at, \
+				) VALUES ('%s','%s','%s','%s','%s','%s') \
+				" % (int(blockHeight),snark['blockStateHash'],int(snark['fee']),'snark'),time_now,time_now)
 			db.commit()
 			cursor.close()
 
@@ -94,9 +99,11 @@ def processing():
 				block, \
 				state, \
 				fee, \
-				type \
-				) VALUES ('%s','%s','%s','%s') \
-				" % (int(blockHeight),user['blockStateHash'],int(user['fee']),'user'))
+				type, \
+				created_at, \
+				updated_at, \
+				) VALUES ('%s','%s','%s','%s','%s','%s') \
+				" % (int(blockHeight),user['blockStateHash'],int(user['fee']),'user'),time_now,time_now)
 			db.commit()
 			cursor.close()
 
@@ -109,9 +116,11 @@ def processing():
 				block, \
 				state, \
 				fee, \
-				type \
-				) VALUES ('%s','%s','%s','%s') \
-				" % (int(blockHeight),fee['blockStateHash'],int(fee['fee']),'user'))
+				type, \
+				created_at, \
+				updated_at, \
+				) VALUES ('%s','%s','%s','%s','%s','%s') \
+				" % (int(blockHeight),fee['blockStateHash'],int(fee['fee']),'user'),time_now,time_now)
 			db.commit()
 			cursor.close()
 
