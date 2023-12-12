@@ -16,7 +16,9 @@ elif [ $APP == 'scheduler' ]; then
 
 elif [ $APP == 'sui' ]; then
 	cd /app/src/
-	python3 sui.py
+	rm celerybeat-schedule 2>/dev/null
+	export CELERY_QUEUE=processing
+	celery -A $APP worker -B --loglevel=info -Q $CELERY_QUEUE -P prefork --concurrency=1 -s celerybeat-$APP
 
 elif [ $APP == 'mina' ]; then
 	cd /app/src/
