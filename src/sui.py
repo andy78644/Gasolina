@@ -123,9 +123,10 @@ def processing():
     for transaction in transactions:
       # print(transaction["effects"]["gasUsed"])
       # print(transaction["transaction"]["data"]["gasData"]["price"])
-      gas_used = transaction["effects"]["gasUsed"]
-      total_fee = int(gas_used["computationCost"]) + int(gas_used["storageCost"]) + int(gas_used["storageRebate"])
-      tips = int(transaction["transaction"]["data"]["gasData"]["price"]) - int(gas_price)
+      #gas_used = transaction["effects"]["gasUsed"]
+      #total_fee = int(gas_used["computationCost"]) + int(gas_used["storageCost"]) + int(gas_used["storageRebate"])
+      total_fee = int(transaction["transaction"]["data"]["gasData"]["price"])
+      tips = max(int(transaction["transaction"]["data"]["gasData"]["price"]) - int(gas_price), 0)
       time_now = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
       cursor = db.cursor()
       cursor.execute("INSERT INTO `sui_transactions` ( \
@@ -137,6 +138,7 @@ def processing():
 				updated_at \
 				) VALUES (%d,%d,%d,%d, '%s', '%s') \
 				" % (int(latest_checkpoint), int(gas_price), int(total_fee), int(tips),time_now,time_now))
+      #print(cursor)
       db.commit()
       cursor.close()
   db.close()
