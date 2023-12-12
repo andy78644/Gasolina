@@ -125,6 +125,8 @@ def processing():
       # print(transaction["transaction"]["data"]["gasData"]["price"])
       #gas_used = transaction["effects"]["gasUsed"]
       #total_fee = int(gas_used["computationCost"]) + int(gas_used["storageCost"]) + int(gas_used["storageRebate"])
+      if(int(transaction["transaction"]["data"]["gasData"]["price"])==1):
+        continue
       total_fee = int(transaction["transaction"]["data"]["gasData"]["price"])
       tips = max(int(transaction["transaction"]["data"]["gasData"]["price"]) - int(gas_price), 0)
       time_now = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')

@@ -2,6 +2,8 @@ import os
 from celery import Celery
 from celery.utils.log import get_task_logger
 from celery.schedules import crontab
+from datetime import datetime
+
 
 #
 # ENV
@@ -55,12 +57,53 @@ def sui():
   cursor = db.cursor()
   cursor.execute("SELECT * FROM `sui_transactions` ORDER BY `total_fee`")
   transactions = cursor.fetchall()
-  for transaction in transactions:
-    print(transaction)
+  transaction_count = len(transactions)
+  slow_count = int(transaction_count/3)
+  avg_count = int(transaction_count/2)
+  fast_count = int(transaction_count/10*9)
+  avg_base = 0
+  slow_base = 0
+  fast_base = 0
+  curr_base = 0
+  avg_price = 0
+  slow_price = 0
+  fast_price = 0
+  curr_price = 0
+  for index, transaction in enumerate(transactions):
+    curr_base += transaction["gas_price"]
+    curr_price += transaction["total_fee"]
+    if(index == slow_count):
+      slow_base = curr_base/(index+1)
+      slow_price = curr_price/(index+1)
+    if(index == avg_count):
+      avg_base = curr_base/(index+1)
+      avg_price= curr_price/(index+1)
+    if(index == fast_count):
+      fast_base = curr_base/(index+1)
+      fast_price = curr_price/(index+1)
+
+  # print(slow_base, "slow_price",slow_price)
+  # print(avg_base, "avg_price",avg_price)
+  # print(fast_base, "fast_price",fast_price)
+  time_now = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+  cursor.execute("INSERT INTO `chain_fee` ( \
+				chain, \
+				slow_base, \
+				avg_base, \
+				fast_base, \
+        slow_price, \
+				avg_price, \
+				fast_price, \
+        created_at, \
+				updated_at \
+				) VALUES ('%s', %d, %d, %d, %d, %d, %d, '%s', '%s') \
+				" % ("sui", slow_base, avg_base, fast_base, slow_price, avg_price, fast_price, time_now,time_now))
+      #print(cursor)
+  db.commit()
+  cursor.close()
+  db.close()
   # get data from blockchain table and calculcate latest fee and store in db
   # ....
-
-  db.close()
   return('Finished')
 
 #
